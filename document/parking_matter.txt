@@ -1,0 +1,843 @@
+Transportation Research Part E 181 (2024) 103391
+Available online 14 December 2023
+1366-5545/© 2023 The Author(s). Published by Elsevier Ltd. This is an open access article under the CC BY license
+(http://creativecommons.org/licenses/by/4.0/).
+Contents lists available at ScienceDirect
+Transportation Research Part E
+journal homepage: www.elsevier.com/locate/tre
+Does parking matter? The impact of parking time on last-mile
+delivery optimization
+Sara Reed a,∗, Ann Melissa Campbellb, Barrett W. Thomasb
+a School of Business, University of Kansas, Lawrence, Kansas, United States of America
+b Department of Business Analytics, University of Iowa, Iowa City, Iowa, United States of America
+A R T I C L E I N F O
+Keywords:
+Parking
+Last-mile delivery
+Routing
+A B S T R A C T
+Parking is a necessary component of traditional last-mile delivery practices, but finding parking
+can be difficult. Yet, the routing literature largely does not account for the need to find parking.
+In this paper, we address this challenge of finding parking through the Capacitated Delivery
+Problem with Parking (CDPP). Unlike other models in the literature, the CDPP accounts for
+parking time in the objective and minimizes the completion time of the delivery tour. Parking
+time represents the process of the delivery person searching for a parking spot and then parking
+the vehicle at the chosen location. When we restrict the customer geography to a complete
+grid, we identify conditions for when a Traveling Salesman Problem (TSP) solution that parks
+at each customer is an optimal solution to the CDPP. We then determine when the parking
+time is large enough for the CDPP optimal solution to differ from this TSP solution. We
+introduce a heuristic for the CDPP that quickly finds high quality solutions to large instances.
+Computational experiments show that parking matters in last-mile delivery optimization. The
+CDPP outperforms industry practice and models in the literature showing the greatest advantage
+when the parking time is high. This analysis provides immediate ways to improve routing in
+last-mile delivery.
+1. Introduction
+A recent empirical study finds that commercial delivery drivers spend on average 5.8 min searching for each parking spot
+in Seattle. On average, cruising for parking accounts for 28% of the total trip time between parking locations ( Dalla Chiara and
+Goodchild, 2020). Even if delivery drivers practice illegal parking behaviors, such as double parking, it still may take drivers several
+minutes to park due to concerns of safety, avoiding conflict with traffic, and cooperating with other drivers ( Dalla Chiara et al. ,
+2021). A Principal Scientist at one major package express carrier said, ‘‘You can’t just double park in front of every customer’’,
+further supporting that even double parking takes time. Parking is a necessary component of last-mile delivery practices, and finding
+a parking spot takes time.
+Increasing levels of e-commerce further exacerbates challenges from parking as more vehicles will be competing for each parking
+spot. In New York City, more than 1.5 million packages need to be delivered every day ( Haag and Hu, 2019). These volumes are
+expected to increase 68% by 2045 (Danigelis, 2018). Attempts to improve productivity in last-mile delivery, partially by eliminating
+the time needed to find parking, often explore the use of new technology, such as drones or autonomous vehicles ( Poikonen and
+Golden, 2020; Simoni et al., 2020a; Reed et al., 2022b). However, it may be many years before the deployment of such technologies.
+Today, more immediate solutions are needed to address the challenges posed by the need for parking.
+∗ Corresponding author.
+E-mail addresses: sara.reed@ku.edu (S. Reed), ann-campbell@uiowa.edu (A.M. Campbell), barrett-thomas@uiowa.edu (B.W. Thomas).
+https://doi.org/10.1016/j.tre.2023.103391
+Received 16 June 2023; Received in revised form 2 November 2023; Accepted 3 December 2023Transportation Research Part E 181 (2024) 103391
+2
+S. Reed et al.
+Although there has historically been recognition that parking takes time and adds complexity to routes (Bodin and Levy, 2000),
+the current last-mile routing literature largely ignores parking time in route planning. This paper demonstrates that solutions to this
+parking problem require models to more explicitly incorporate parking decisions. Choosing when and where to park the vehicle is
+a choice made by the driver, often without the aid of decision support (Boysen et al., 2021). Where decision support is available, it
+is often in the form of a solution to the Traveling Salesman Problem (TSP). For example, a routing algorithm used by UPS includes
+a TSP algorithm, but gives drivers autonomy in making final routing decisions about where to drive, where to park, and where to
+walk (Rosenbush and Stevens, 2015).
+To capture the trade-offs between walking to serve more customers from the current parking location and driving to find a new
+parking location, we model last-mile delivery practices using the Capacitated Delivery Problem with Parking (CDPP). The CDPP is
+the problem of serving a set of customers with a vehicle and delivery person. The delivery person must park the vehicle to service
+customers on foot. As the first paper in the literature to explore the impact of parking time, we model this problem deterministically
+by using a fixed parking time to represent the process of the delivery person searching for a parking spot and then parking the vehicle
+at the chosen location. The carrying capacity of the delivery person may be restricted based on the number, weight, or volume of
+packages. The delivery person must return to the parked vehicle after making deliveries on foot. Once returned to the vehicle, the
+delivery person can load more packages or drive to search for a different parking spot. Under the assumption that driving is faster
+than walking, we show driving a TSP solution and serving each customer individually is optimal if there is no time associated with
+parking. However, we prove that parking time only needs to be 1.6 min in urban environments to achieve immediate productivity
+gains by modeling last-mile delivery as a two-echelon routing problem. Where to park and how often to park become important
+operational decisions that may improve the productivity of the delivery person, opening a rich area of research in last-mile delivery.
+The CDPP generalizes models in the current literature in last-mile delivery, and these generalizations make the mixed integer
+programming (MIP) formulation for the CDPP difficult to solve. To analyze the impact of parking time, we develop new technology
+to solve the CDPP to optimality. For instances that face computational limitations, we provide a heuristic for the CDPP that finds
+high quality solutions quickly. This heuristic captures changes in the solution structure from including parking time.
+To understand the impact of considering parking time in routing decisions, we benchmark the CDPP with multiple other vehicle
+routing problems. The simplest comparison is to use the solution to the TSP with respect to driving times and assume the delivery
+person parks at every customer. When we restrict the customer geography to a complete grid, we identify conditions for when
+this TSP solution is an optimal solution to the CDPP. Then, we determine when parking time is large enough for the CDPP optimal
+solution to differ from this TSP solution. For experimental comparisons, we benchmark the CDPP with models that represent current
+industry practice as well as recent models in the literature.
+While the CDPP was introduced as a benchmark in Reed et al. (2022b), this paper is the first to fully analyze and explore the
+problem. We bring insight as to why parking matters in last-mile delivery in the following ways:
+• We analyze the first model that includes parking time in the objective function. We utilize optimal solutions to the CDPP to
+evaluate the impact of parking time on last-mile delivery optimization.
+• To capture the impact of parking time on optimal routing decisions for larger instances, we provide a heuristic to the CDPP
+that finds high quality solutions quickly.
+• By restricting the customer geography to a complete grid, we identify conditions under which following a TSP tour of the
+customers and parking at each one is an optimal solution to the CDPP as well as the value of parking time that defines change
+in the structure of an optimal solution to the CDPP.
+• We provide valuable insights from computational experiments showing when the consideration of parking time in the model
+makes the greatest impact across urban to rural customer geographies.
+Section 2 reviews the literature specifically addressing the limited work in vehicle routing that considers the need to park
+the vehicle. Section 3 discusses the service times, assumptions, and the MIP formulation for the CDPP. To solve larger instances,
+Section 3.3 provides a heuristic for the CDPP that finds high quality solutions quickly. In Section 4, we directly compare the structure
+of the CDPP solution with a TSP solution that parks at every customer on a complete grid of customers, providing conditions for
+when the solutions are equivalent and the value of parking time that defines change in the structure of an optimal solution to the
+CDPP. Then, Section 5 presents experimental results on real-world customer geographies and discusses the impact of considering
+parking time on the structure of the solution and the completion time of the delivery tour. Conclusions and future work are discussed
+in Section 6.
+2. Literature review
+In this section, we focus on the vehicle routing literature that consider the need to park the vehicle and serve customers on foot.
+We should note that most literature on last-mile delivery focuses on minimizing driving distance to visit all customers and neglects
+the need to park the vehicle and determine walking tours (Boysen et al., 2021). We begin by summarizing work that introduced
+the CDPP to the literature and then discuss studies in routing of last-mile delivery that do not explicitly consider parking time in
+the objective function.
+Reed et al. (2022b) introduce the CDPP as a benchmark to the Capacitated Autonomous Vehicle Assisted Delivery Problem
+(CAVADP). The CAVADP is the problem of serving a set of customers using an autonomous vehicle assisted by a delivery person. Reed
+et al. (2022b) provide a MIP formulation for the CDPP but offer no additional study of this problem. The CDPP simply plays the role
+of being a benchmark model to evaluate the impact of autonomous-assisted delivery on a complete grid of customers, a simplifiedTransportation Research Part E 181 (2024) 103391
+3
+S. Reed et al.
+representation of urban environments. Similarly, Reed et al. (2022a) use the CDPP as a benchmark when exploring the CAVADP on
+a general graph to represent urban-to-rural settings. In this paper, we focus on the impact of including parking time in the objective
+function. To do so, we analytically study optimal solutions to the CDPP on a complete grid and identify conditions under which a
+TSP solution parking at every customer is optimal. Doing so allows us to understand when parking time impacts optimal routing
+decisions. We also introduce a high-quality heuristic that can quickly solve large instances of the CDPP providing immediate ways
+to improve routing in last-mile delivery.
+Most studies in routing of last-mile delivery focus on the trade-offs of walking and driving for the delivery person and ignore
+trade-offs between the difficulty to find parking and other routing decisions. As noted in the literature review of Le Colleter et al.
+(2023), an earlier version of our paper motivated Le Colleter et al. to include parking time in the Park-and-Loop Routing Problem
+with Parking Selection that optimizes a fleet of vehicles in last-mile delivery. Unlike the CDPP, Le Colleter et al. (2023) provide
+a MIP formulation that uses a polynomial set of variables and constraints. The MIP is only tested with 10 and 15 customers.
+Otherwise, Le Colleter et al. (2023) develop a heuristic. The impact of parking extends to applications outside of last-mile delivery.
+For example, Cabrera et al. (2022) model parking time in the Doubly Open Park-and-Loop Routing Problem that routes technicians to
+perform on-site utility services. The complexity of including parking in routing decisions also leads Cabrera et al. (2022) to develop
+a heuristic. In addition to computational experiments that show the impact of parking time on optimal routing decisions, we also
+analytically identify when optimal solutions differ from the TSP across urban-to-rural customer geographies to further support the
+use of parking time when making routing decisions.
+The closest problem to the CDPP is the two-echelon last-mile delivery system introduced by Martinez-Sykora et al. (2020). In
+this system, the decisions are the locations where the vehicle will park, the locations visited by the delivery person on foot, and the
+order of delivery locations in both the driving and walking routes. The carrying capacity of the delivery person restricts the volume
+and weight of packages in a customer set. Martinez-Sykora et al. (2020) provide a MIP formulation that uses a polynomial set of
+variables and constraints but require that one node within each customer set be designated as the parking location. A generalization
+for the CDPP relative to Martinez-Sykora et al. (2020) is the ability to serve multiple customer service sets from the same parking
+spot, i.e., the delivery person may service multiple walking loops that start and end at the same parking spot to serve different sets
+of customers. In addition, this paper provides a model formulation for the CDPP that allows the parking locations to differ from
+customer locations. Martinez-Sykora et al. (2020) include the clustering of customers as a decision in the optimization problem,
+but do not include parking time in the objective function. Instead, the objective is a weighted sum of the driving time and walking
+time for the delivery person. This paper uses the objective function of Martinez-Sykora et al. (2020) to benchmark the objective
+function in the CDPP. Comparing the solutions with the objective value in Martinez-Sykora et al. (2020) to the solutions using an
+objective value that includes parking time highlights the impact of parking time on optimal routing decisions. Our results show that
+the weighting of the driving and walking time in the objective is not sufficient to account for parking and in fact performs quite
+poorly as a proxy. Martinez-Sykora et al. (2020) use a branch-and-cut algorithm to solve instances up to 30 customers. In this paper,
+we solve larger instances for the CDPP than the instances in Martinez-Sykora et al. (2020).
+Nguyên et al. (2019) define a two-level clustered routing problem to distinguish between the driving route and walking routes
+of the delivery person. Service time to customers is restricted by time windows. The grouping of customers is an input to the model.
+Two different partitions of customers are considered: one based on observations of drivers from a case study in London and one
+based on geographical proximity. Each cluster is required to have a parking location within the cluster. The CDPP generalizes this
+approach by making the partition of customers and the parking locations optimization decisions. In addition, the CDPP allows
+multiple customer service sets to be visited from the same parking spot. The optimization decisions in Nguyên et al. (2019) are to
+select the parking location in each cluster, route the vehicle between the parking locations and depot, and route the walking of the
+delivery person in each cluster. These decisions capture the delivery person’s walk back to the parking location but fail to capture
+the advantages of serving more than one customer set per parking location if the parking time is high. Nguyên et al. (2019) solve
+the mixed integer programming formulation for the case study in London and observe that optimizing with respect to time windows
+can reduce total operation time. However, the parking time is not considered in the operation time. We leave the consideration of
+time windows in the CDPP for future work and focus this paper on the impact that parking time has on the total time of the delivery
+tour and the structure of the solution.
+More generally, the CDPP can be related to the two-echelon routing problem. In the application of last-mile delivery, one echelon
+refers to the driving route and the second echelon refers to the walking routes of the delivery person. Sluijk et al. (2023) provide a
+survey on two-echelon routing problems. The Single Truck-and-Trailer Routing Problem with Satellite Depots (STTRPSD) is similar
+to the CDPP with the trailer representing the vehicle and the truck representing the delivery person. The truck and trailer are routed
+on a subset of the satellites (i.e., parking locations for the CDPP) and then the customers are visited from the truck (i.e., delivery
+person) with routes at each satellite. Belenguer et al. (2016) present a branch-and-cut algorithm to solve the STTRPSD. Belenguer
+et al. (2016) solve all instances up to 50 customers to optimality and solve 100 to 200 customers to an average optimality gap of
+3.02%. The test instances consider at most 10 satellites with 25 to 50 customers and at most 20 satellites with 100 to 200 customers.
+In our case, we consider all customer locations to be available parking spots (i.e., satellite locations) significantly increasing the size
+of the model. For instances that face computational limitations, we provide a heuristic for the CDPP.
+Unlike the STTRPSD and other two-echelon models for last-mile delivery, the CDPP considers a time associated with searching for
+a parking spot and then parking the vehicle at the chosen location. This feature aligns the CDPP with the Two-Echelon Capacitated
+Location-Routing Problem (2E-CLRP) where an opening cost is associated with the satellites (i.e., parking locations). Boccia et al.
+(2011) present three mixed integer programming formulations for the 2E-CLRP. The 2E-CLRP considers two different fleets of
+vehicles for first-level and second-level trips, connected by the satellites for transshipment operations. Therefore, the 2E-CLRP canTransportation Research Part E 181 (2024) 103391
+4
+S. Reed et al.
+Table 1
+Set of parameters in CDPP.
+Notation Description
+𝑛 Number of customers
+𝐶 Set of customer locations
+𝑆 Set of customer service sets
+0 Depot
+𝛱 Set of parking locations and depot
+𝑝𝑖 Expected time to search for parking and then park at parking location 𝑖 ∈ 𝛱 ⧵ {0} (minutes)
+𝑞 Capacity of delivery person (number of packages)
+𝐽𝑖 Set of customer sets that include customer 𝑖 for 𝑖 ∈ 𝐶
+𝐼𝑖𝑗 Indicator variable that customer 𝑖 is in service set 𝜎𝑗 for 𝑖 ∈ 𝐶, 𝜎𝑗 ∈ 𝑆
+decompose into two different capacitated location routing problems (Contardo et al., 2012). However, in the CDPP, there exists a
+dependence between the two levels. The vehicle must remain at the parking spot on the first-level route while the delivery person
+serves potentially multiple second-level routes on foot. In addition, the travel times in the two levels differ and we capture these
+differences by using real-world data for the driving times and walking times between customers. For the application of last-mile
+delivery, the CDPP balances the trade-offs of the delivery person walking and driving to find a new parking location, so differing
+travel times influence the solution structure. Nguyen et al. (2012b) and Nguyen et al. (2012a) propose metaheuristic approaches to
+solve the 2E-CLRP. The heuristic proposed in this paper may be applicable to other problems that align with the 2E-CLRP where
+there is a dependence between the two echelons.
+Another line of research uses simulation to model parking availability and the impacts on commercial vehicle parking
+behavior (Lopez et al., 2019; Nourinejad et al., 2014). Figliozzi and Tipagornwong (2017) combine queuing and logistical models
+to model parking availability but use continuous approximation models to estimate routing constraints. These papers show that
+parking has an impact on operations, but still do not consider parking in the routing optimization. In this paper, we argue parking
+time makes a significant impact on the routing optimization.
+3. CDPP
+In this section, we provide details on the CDPP and the related MIP formulation. Section 3.1 defines the problem and provides
+notation for the parameters and service times. Then, Section 3.2 provides the MIP formulation. The CDPP generalizes models in
+the current literature in last-mile delivery, and these generalizations make the MIP formulation for the CDPP difficult to solve. To
+analyze solutions to the CDPP for larger instances, Section 3.3 provides a heuristic.
+3.1. Problem description and notation
+The CDPP serves a set of 𝑛 customers in a set 𝐶 by a delivery person with a vehicle. The delivery person and vehicle start and
+end the tour at the depot, denoted as 0. The delivery person must park the vehicle to service customers on foot. Let 𝛱 be the set
+of parking locations and depot. The time to search for parking and then park at parking location 𝑖 ∈ 𝛱 ⧵ {0} is 𝑝𝑖 minutes. Once
+parked, the delivery person services a set of customers on foot. After servicing a customer set on foot, the delivery person returns
+to the parked vehicle. The delivery person can serve another set of customers from this parking spot or move to a different parking
+spot (e.g. 𝑘 ∈ 𝛱) incurring a parking time of 𝑝𝑘 minutes.
+Each customer requires a single package delivery. Multiple customer nodes at the same customer location may represent a single
+customer ordering multiple packages. Let 𝑆 be the set of potential customer service sets. A customer service set 𝜎𝑗 ∈ 𝑆 is a subset of
+the customers that will be served in a walking route, i.e., 𝜎𝑗 ⊂ 𝐶 . We also refer to customer service sets as service sets. The capacity
+of the delivery person 𝑞 restricts the number of packages in each customer service set, i.e., |𝜎𝑗 | ≤ 𝑞 for all sets 𝜎𝑗 ∈ 𝑆. If needed,
+similar capacity limits relative to package weight or volume may be imposed when generating potential customer service sets. For
+each 𝑖 ∈ 𝐶, let 𝐽𝑖 = {𝜎𝑗 ∈ 𝑆|𝑖 ∈ 𝜎𝑗 } be the set of customer service sets that includes customer 𝑖. Define 𝐼𝑖𝑗 = 1 if 𝜎𝑗 ∈ 𝐽𝑖 for all 𝑖 ∈ 𝐶
+and 𝜎𝑗 ∈ 𝑆, and 0 otherwise. Table 1 summarizes the parameters for the CDPP.
+The service times require more detail in their definition. Table 2 summarizes the service times for the CDPP. Let 𝐷(𝑖, 𝑘) be the
+time to drive between locations 𝑖 and 𝑘 for 𝑖, 𝑘 ∈ 𝛱. We assume driving times satisfy the triangle inequality. Let 𝑑𝑖𝑘 be the time
+to drive from location 𝑖 to location 𝑘 and park at 𝑘. Then, 𝑑𝑖𝑘 = 𝐷(𝑖, 𝑘) + 𝑝𝑘 for 𝑖, 𝑘 ∈ 𝛱 such that 𝑖 ≠ 𝑘. In the case where 𝑘 = 0
+(i.e., the return to the depot), the vehicle does not need to search for parking and 𝑑𝑖0 = 𝐷(𝑖, 0) for all 𝑖 ∈ 𝛱 ⧵ {0}.
+Let 𝑊 (𝑖, 𝑘) be the time to walk between locations 𝑖 and 𝑘 for 𝑖, 𝑘 ∈ 𝐶 ∪ 𝛱 ⧵ {0}. We assume walking times satisfy the triangle
+inequality. Let 𝑤𝑖𝑗 be the shortest walking time to service set 𝜎𝑗 when parked at parking location 𝑖 for 𝑖 ∈ 𝛱 ⧵ {0}, 𝜎𝑗 ∈ 𝑆. This
+walking time is the shortest walk from parking location 𝑖 to the first customer to be served in set 𝜎𝑗, the walk between customers
+in 𝜎𝑗, and the walk back to parking location 𝑖 where the vehicle is parked. For the pair (𝑖, 𝜎𝑗 ) ∈ 𝛱 ⧵ {0} × 𝑆, let (𝑐1, 𝑐2, … , 𝑐|𝜎𝑗 |) be
+an optimal order to serve 𝜎𝑗 when parked at 𝑖. Then, 𝑤𝑖𝑗 = 𝑊 (𝑖, 𝑐1) + 𝑊 (𝑐1, 𝑐2) + ⋯ + 𝑊 (𝑐|𝜎𝑗 |−1, 𝑐|𝜎𝑗 |) + 𝑊 (𝑐|𝜎𝑗 |, 𝑖).
+Let 𝑓𝑗 be the time to load package(s) to service set 𝜎𝑗. We consider a loading time linearly dependent on the number of packages
+in the service set, i.e., 𝑓𝑗 = 𝑓 ⋅ |𝜎𝑗 | for some 𝑓 ≥ 0. Therefore, the total loading time in the delivery tour is a constant 𝑛𝑓, and the
+solution to the CDPP is equivalent to the solution when 𝑓𝑗 ≡ 0 or 𝑓 = 0.Transportation Research Part E 181 (2024) 103391
+5
+S. Reed et al.
+Table 2
+Set of service times in CDPP.
+Notation Description
+𝐷(𝑖, 𝑘) Time to drive from 𝑖 to 𝑘 for 𝑖, 𝑘 ∈ 𝛱 (min)
+𝑑𝑖𝑘 Time to drive from 𝑖 to 𝑘 and park at 𝑘 for 𝑖 ∈ 𝛱, 𝑘 ∈ 𝛱 ⧵ {0} such that 𝑖 ≠ 𝑘 (min)
+𝑑𝑖0 Time to drive from parking location 𝑖 to depot for 𝑖 ∈ 𝛱 ⧵ {0} (min)
+𝑊 (𝑖, 𝑘) Time to walk from 𝑖 to 𝑘 for 𝑖, 𝑘 ∈ 𝐶 ∪ 𝛱 ⧵ {0} (min)
+𝑤𝑖𝑗 Time to walk and serve set 𝜎𝑗 while parked at location 𝑖 for 𝑖 ∈ 𝛱 ⧵ {0}, 𝜎𝑗 ∈ 𝑆 (min)
+𝑓 Time to load one package (min)
+𝑓𝑗 Time to load packages for customer set 𝜎𝑗 for 𝜎𝑗 ∈ 𝑆 (min)
+Table 3
+Set of decision variables in CDPP.
+Notation Description
+𝑥𝑖𝑘 𝑥𝑖𝑘 = 1 if the vehicle drives from 𝑖 to 𝑘 and parks at parking location 𝑘 (if 𝑘 ≠ 0) for 𝑖, 𝑘 ∈ 𝛱 such that 𝑖 ≠ 𝑘
+𝑦𝑖𝑗 𝑦𝑖𝑗 = 1 if the delivery person is parked at parking location 𝑖 and serves set 𝜎𝑗 for 𝑖 ∈ 𝛱 ⧵ {0} and 𝜎𝑗 ∈ 𝑆
+𝑣𝑖𝑘 Flow of packages from location 𝑖 to location 𝑘 for 𝑖 ∈ 𝛱 and 𝑘 ∈ 𝛱 ⧵ {0} such that 𝑖 ≠ 𝑘
+3.2. MIP formulation
+Reed et al. (2022b) introduce a variant of the CDPP presented here and provide a MIP formulation. Reed et al. (2022b) take
+𝑓𝑗 ≡ 𝑔 for some constant 𝑔 ≥ 0. For the purposes of clarity and updated notation, we provide the general formulation here. We also
+adapt single commodity subtour elimination constraints, as opposed to the adapted MTZ subtour elimination constraints presented
+in Reed et al. (2022b). Table 3 summarizes the decision variables for the model.
+min
+∑
+𝑖∈𝛱
+∑
+𝑘∈𝛱⧵{𝑖}
+𝑥𝑖𝑘𝑑𝑖𝑘 +
+∑
+𝑖∈𝛱⧵{0}
+∑
+𝜎𝑗 ∈𝑆
+𝑦𝑖𝑗 (𝑤𝑖𝑗 + 𝑓𝑗 ) (1)
+s.t.
+∑
+𝑖∈𝛱⧵{0}
+𝑥0𝑖 = 1 (2)
+∑
+𝑖∈𝛱⧵{0}
+𝑥𝑖0 = 1 (3)
+∑
+𝑘∈𝛱⧵{0}
+∑
+𝜎𝑗 ∈𝐽𝑖
+𝑦𝑘𝑗 = 1 ∀ 𝑖 ∈ 𝐶 (4)
+∑
+𝑘∈𝛱⧵{𝑖}
+𝑥𝑘𝑖 =
+∑
+𝑘∈𝛱⧵{𝑖}
+𝑥𝑖𝑘 ∀𝑖 ∈ 𝛱 ⧵ {0} (5)
+𝑦𝑖𝑗 ≤
+∑
+𝑘∈𝛱⧵{𝑖}
+𝑥𝑘𝑖 ∀𝑖 ∈ 𝛱 ⧵ {0}, 𝜎𝑗 ∈ 𝑆 (6)
+∑
+𝑖∈𝛱⧵{0}
+𝑣0𝑖 = 𝑛 (7)
+𝑣𝑖𝑘 ≤ 𝑛 ⋅ 𝑥𝑖𝑘 ∀𝑖 ∈ 𝛱, 𝑘 ∈ 𝛱 ⧵ {0}|𝑖 ≠ 𝑘 (8)
+∑
+𝑘∈𝛱⧵{𝑖}
+𝑣𝑘𝑖 −
+∑
+𝑘∈𝛱⧵{0,𝑖}
+𝑣𝑖𝑘 =
+∑
+𝜎𝑗 ∈𝑆
+|𝜎𝑗 |𝑦𝑖𝑗 ∀𝑖 ∈ 𝛱 (9)
+𝑣𝑖𝑘 ∈ Z+ ∀𝑖 ∈ 𝛱, 𝑘 ∈ 𝛱 ⧵ {0}|𝑖 ≠ 𝑘 (10)
+𝑥𝑖𝑘 ∈ {0, 1} ∀ 𝑖, 𝑘 ∈ 𝛱|𝑖 ≠ 𝑘 (11)
+𝑦𝑖𝑗 ∈ {0, 1} ∀ 𝑖 ∈ 𝛱 ⧵ {0}, 𝜎𝑗 ∈ 𝑆 (12)
+The objective function in Eq. (1) minimizes the completion time of the delivery tour. The first term includes the driving time and
+parking time. The second term is the walking and service time for the delivery person. Constraints (2) and (3) require the vehicle
+to leave from the depot and return to the depot, respectively. Constraints (4) require that each customer is served in a service set.
+When the delivery person parks at a parking location, Constraints (5) ensure that the vehicle leaves that parking location. Given
+that the delivery person services set 𝜎𝑗 when parked at parking location 𝑖 (i.e., 𝑦𝑖𝑗 = 1), Constraints (6) require the vehicle to drive
+to and park at location 𝑖. Constraints (7)–(10) provide the adapted single commodity subtour elimination constraints. Constraints
+(7) and (8) ensure 𝑛 packages flow through the network. While at parking location 𝑖, the flow should change by the number of
+customers in all service sets served from parking spot 𝑖. Constraints (9) capture the change in flow. The integer constraints on the
+𝑣𝑖𝑘 variables are given in Constraints (10). Finally, the binary constraints on variables 𝑥𝑖𝑘 and 𝑦𝑖𝑗 are given in Constraints (11) and
+(12), respectively.
+To solve the CDPP to optimality, we exploit structure in optimal solutions to identify valid inequalities that raise the lower bound
+of the MIP and variable reduction techniques that reduce the large number of variables present in the MIP formulation. Appendix ATransportation Research Part E 181 (2024) 103391
+6
+S. Reed et al.
+provides these model improvements that allow us to efficiently solve problems with 𝑛 = 50 customers and 𝑞 = 3 packages. Problems
+in the related literature solve less than 𝑛 = 50 customers exactly (Martinez-Sykora et al., 2020; Le Colleter et al., 2023) and last-mile
+delivery routing data supports the use of 𝑞 = 3 packages as a base case (Allen et al., 2018; Merchan et al., 2022). If we want to solve
+instances with more customers or larger capacities for the delivery person, we face computational limitations due to the growth in
+the size of the model. To allow us to provide insight on larger instances in our experimental results, Section 3.3 provides a heuristic
+for the CDPP.
+3.3. Heuristic method for the CDPP
+To understand the impact of parking time on routing decisions for larger instances, we provide a heuristic for the CDPP that
+finds high quality solutions quickly. The proposed two-echelon location-routing heuristic decomposes the decisions of the CDPP
+into two echelons. Section 3.3.1 describes the first echelon, defined as the Parking Assignment and Routing Problem (PA-R), where
+the customers are assigned to parking locations and the route of the vehicle between these parking locations is defined. For each
+parking spot, Section 3.3.2 describes the second echelon, defined as the Service Set Assignment Problem (SSA), which determines
+how to optimally partition the customers in service sets given the parking spots, therefore, defining the walking paths of the delivery
+person.
+The two-echelon location-routing heuristic finds high quality solutions quickly allowing us to extend our discussion on the impact
+of parking time to instances with more customers and a larger capacity for the delivery person. Appendix A provides detailed results
+on the heuristic solutions and the quality of these solutions for the experimental design in Section 5.1. For 𝑛 = 50 customers, the
+heuristic solution is on average within 5.5% of the CDPP optimal value for 𝑞 = 1 to 4 packages. With the largest instance being
+𝑛 = 100 customers and 𝑞 = 6 packages, the average runtime for the two-echelon location routing is at most 0.7 min across all
+customer environments (urban, suburban, and rural) and capacities for the delivery person.
+3.3.1. Parking assignment and routing problem
+The PA-R determines where to park the vehicle, the assignment of customers to parking locations, and the route of the vehicle
+between these parking locations. We further decompose the PA-R into two MIPs.
+First, we determine where to park the vehicle and assign customers to parking locations. Let ̂ 𝑝𝑖 = 1 if the delivery person parks
+at parking spot 𝑖 for 𝑖 ∈ 𝛱 ⧵ {0}, 0 otherwise. Let ̂ 𝑎𝑖𝑘 = 1 if customer 𝑘 is assigned to parking spot 𝑖 for 𝑖 ∈ 𝛱 ⧵ {0} and 𝑘 ∈ 𝐶, 0
+otherwise. All service times used in the MIPs of this section are defined in Section 3.1. The cost of opening a parking spot is the
+parking time 𝑝. Therefore, the PA-R captures parking at fewer locations when the parking time is high. Solve the following MIP and
+denote an optimal solution 𝑍.
+min
+∑
+𝑖∈𝛱⧵{0}
+𝑝 ⋅ ̂ 𝑝𝑖 +
+∑
+𝑖∈𝛱⧵{0}
+∑
+𝑘∈𝐶
+𝑊 (𝑖, 𝑘) ⋅ ̂ 𝑎𝑖𝑘 (13)
+s.t.
+∑
+𝑖∈𝛱⧵{0}
+̂ 𝑎𝑖𝑘 = 1 ∀ 𝑘 ∈ 𝐶 (14)
+̂ 𝑎𝑖𝑘 ≤ ̂ 𝑝𝑖 ∀𝑖 ∈ 𝛱 ⧵ {0}, 𝑘 ∈ 𝐶 (15)
+̂ 𝑝𝑖 ≤
+∑
+𝑘∈𝐶
+̂ 𝑎𝑖𝑘 ∀𝑖 ∈ 𝛱 ⧵ {0} (16)
+̂ 𝑝𝑖 ∈ {0, 1} ∀ 𝑖 ∈ 𝛱 ⧵ {0} (17)
+̂ 𝑎𝑖𝑘 ∈ {0, 1} ∀ 𝑖 ∈ 𝛱 ⧵ {0}, 𝑘 ∈ 𝐶 (18)
+The objective function in Eq. (13) minimizes a linear combination of the parking time and the assignment of walking (without return
+walks) to the customers from parking locations. Constraints (14) require that each customer is assigned to a parking spot. Given
+that a customer is assigned to a parking spot, Constraints (15) require the vehicle to be parked at that parking spot. If no customers
+are assigned to a parking spot, then Constraints (16) ensure that the parking spot is not opened. Finally, Constraints (17) and (18)
+give the binary constraints on variables ̂ 𝑝𝑖 and ̂ 𝑎𝑖𝑘, respectively.
+Now, let 𝑃 = {𝑖 ∈ 𝛱 ⧵ {0}| ̂ 𝑝𝑖 = 1 in 𝑍} be the parking spots in solution 𝑍. We find the TSP solution of 𝑃 ∪ 0 with respect to the
+driving times, 𝐷(𝑖, 𝑘), using the standard TSP MIP formulation with single commodity subtour elimination constraints (Gavish and
+Graves, 1978). This solution provides the route of the vehicle between the parking locations.
+3.3.2. Service set assignment problem
+For each parking spot, the SSA partitions the customers into customer service sets defining the walking paths of the delivery
+person. For each 𝑖 ∈ 𝑃 , define 𝐾𝑖 = { 𝑘 ∈ 𝐶| ̂ 𝑎𝑖𝑘 = 1 in 𝑍} to be the customers assigned to parking spot 𝑖 in solution 𝑍. For each
+𝑖 ∈ 𝑃 , define 𝑆𝑖 ⊂ 𝑆 to be the potential sets to be served at 𝑖, i.e., 𝑆𝑖 = {𝜎𝑗 ∈ 𝑆|𝜎𝑗 ⊆ 𝐾 𝑖}. For each 𝑘 ∈ 𝐾𝑖, let ̂𝐽𝑘 = {𝜎𝑗 ∈ 𝐽𝑘|𝜎𝑗 ∈ 𝑆𝑖}
+be the service sets in 𝑆𝑖 that include customer 𝑘. Let ̂ 𝑦𝑗 = 1 if 𝜎𝑗 is serviced for 𝜎𝑗 ∈ 𝑆𝑖. Solve the following MIP for each parking
+spot 𝑖 ∈ 𝑃 to determine the service sets.Transportation Research Part E 181 (2024) 103391
+7
+S. Reed et al.
+Fig. 1. An example of the TSP solution parking at every customer on a 6 × 6 grid of customers.
+min
+∑
+𝜎𝑗 ∈𝑆𝑖
+𝑤𝑖𝑗 ̂ 𝑦𝑗 (19)
+s.t.
+∑
+𝑗∈ ̂𝐽𝑘
+̂ 𝑦𝑗 = 1 ∀ 𝑘 ∈ 𝐾𝑖 (20)
+̂ 𝑦𝑗 ∈ {0, 1} ∀ 𝑗 ∈ 𝑆𝑖 (21)
+The objective function in Eq. ( 19) minimizes the walking time for the delivery person servicing customers 𝐾𝑖 while parked at
+customer 𝑖. Constraints (20) require each customer in 𝐾𝑖 to be in a service set. Constraints ( 21) give the binary constraints on the
+variables ̂ 𝑦𝑗.
+4. When is the TSP solution parking at every customer optimal?
+A TSP solution parking at every customer location is a feasible solution to the CDPP when 𝐶 ⊆ 𝛱 and often utilized to assist in
+last-mile delivery routing decisions. Because driving is often faster than walking, this TSP solution may be optimal if the parking
+time is low, particularly when customers are further apart. However, when customers are close together, accounting for parking
+time in routing decisions may make it advantageous for the delivery person to consolidate packages into larger customer service sets
+to reduce the number of times the delivery person searches for parking and parks the vehicle. In this section, we identify conditions
+under which a TSP solution parking at every customer location is optimal for the CDPP. We also identify when considering parking
+time in routing decisions is necessary to reduce the completion time of the delivery tour.
+We expect the density of customer locations in combination with the parking time to impact the structure of the CDPP solution.
+To analyze the impact of these features of the problem setting on the CDPP, we consider a complete grid of customers and determine
+when the parking time is large enough that an optimal solution to the CDPP is no longer this TSP solution. For the purpose of this
+analysis, we restrict the setting to a
+√
+𝑛 ×
+√
+𝑛 complete grid of 𝑛 customers where
+√
+𝑛 is even. Let CDPP-grid indicate a problem
+instance of the CDPP restricted to this grid setting. We assume 𝛱 = 𝐶 ∪ 0 and take 𝑝𝑘 = 𝑝 for all 𝑘 ∈ 𝛱 ⧵ {0}. Let ̂𝑑 be the time to
+drive a unit and ̂𝑤 be the time to walk a unit where ̂𝑑 ≤ ̂𝑤. The length of a block is ̂𝑙 units. The capacity of the delivery person is
+based on the number of packages 𝑞 assuming that each customer has a single package. Let (0, 0) represent the location of the depot
+with the bottom left corner of the grid at (1, 1), bottom right corner at (
+√
+𝑛, 1), top left corner at (1,
+√
+𝑛), and top right corner at
+(
+√
+𝑛,
+√
+𝑛).
+We first contemplate the case of a TSP tour through the set of customer locations parking at every customer. Fig. 1 shows an
+example of this TSP solution on a 6 × 6 grid of customers. The black square indicates the location of the depot and circles represent
+the customer locations. The solid blue lines represent the path of the vehicle. A red square designates the customer location as a
+parking spot. Lemma 1 characterizes the completion time of a TSP tour through the grid parking at every customer. The result
+follows from the analysis in Reed et al. ( 2022b).
+Lemma 1. Consider a TSP solution where the delivery person parks at every customer location. The objective value for this solution on a√
+𝑛 ×
+√
+𝑛 complete grid of customers when
+√
+𝑛 is even is
+(2 ⋅ 𝑀𝑖𝑛𝐷𝑖𝑠𝑡𝑎𝑛𝑐𝑒 + 𝑛) ̂𝑑 ̂𝑙 + 𝑛𝑓 + 𝑛𝑝 (22)
+where 𝑀𝑖𝑛𝐷𝑖𝑠𝑡𝑎𝑛𝑐𝑒 is the minimum distance (in blocks) between the depot and a customer on the grid.
+Next, we identify nonzero parking times where an optimal solution to the CDPP-grid is this TSP solution parking at every customer
+location. We also determine when 𝑝 becomes large enough that this TSP solution is not optimal. Claim 1 summarizes these results
+when 𝑞 ≤ 2. This and all other proofs can be found in Appendix A.Transportation Research Part E 181 (2024) 103391
+8
+S. Reed et al.
+Fig. 2. The value of parking time 𝑝 (minutes) that determines the optimality of the TSP solution parking at every customer location for the CDPP-grid.
+Claim 1. Assume 𝑞 ≤ 2. Then,
+(a) if 𝑝 ≤ ̂𝑙(2 ̂𝑤 − ̂𝑑), then an optimal solution to the CDPP-grid is a TSP solution parking at every customer;
+(b) if 𝑝 > ̂𝑙(2 ̂𝑤 − ̂𝑑), then a TSP solution parking at every customer is not an optimal solution to the CDPP-grid.
+Increasing the capacity of the delivery person to 𝑞 = 3 packages allows for gains from consolidating customers into service sets
+at lower parking times than identified in Claim 1. Claim 1 finds a threshold of 𝑝 = ̂𝑙(2 ̂𝑤 − ̂𝑑) for the solution structure of the CDPP
+to change. When 𝑞 = 3, Claim 2 reduces this threshold to 𝑝 = ̂𝑙( 4
+3 ̂𝑤 − ̂𝑑).
+Claim 2. Assume 𝑞 = 3. Then,
+(a) if 𝑝 ≤ ̂𝑙( 4
+3 ̂𝑤 − ̂𝑑), then an optimal solution to the CDPP-grid is a TSP solution parking at every customer;
+(b) if 𝑝 > ̂𝑙( 4
+3 ̂𝑤 − ̂𝑑), then a TSP solution parking at every customer is not an optimal solution to the CDPP-grid.
+Now, we discuss the implications of Claims 1 and 2 on optimal routing decision for last-mile delivery. In both claims, the value
+of ̂𝑙, and thus the density of customers, plays a crucial role in determining the structure of the optimal solution to the CDPP-grid.
+For this analysis, we consider grids representing urban-to-rural settings. We estimate the parameters from the instances presented
+in Reed et al. (2022a) using real-world data to estimate driving and walking speeds. Section 5.1 further describes the data presented
+in Reed et al. (2022a). In urban environments (e.g. Cook County in Illinois), we estimate ̂𝑙 = 0.07 miles and ̂𝑑 = 4.6 min/mi. In rural
+environments (e.g. Cumberland County in Illinois), we estimate ̂𝑙 = 0 .26 miles and ̂𝑑 = 3 .8 min/mi. We estimate ̂𝑤 = 20 .3 min/mi
+across all urban-to-rural settings.
+Fig. 2 shows the value of parking time 𝑝 that defines change in the structure of an optimal solution to the CDPP-grid when
+𝑞 ≤ 2 and 𝑞 = 3 . For this analysis, we make the simplifying assumption that the values of ̂𝑙 (the proxy for customer density) and
+driving speed increase linearly across urban-to-rural settings to analyze the critical value of parking time identified in Claims 1 and
+2. In urban environments, when customers are closer together, small values for parking time impact the structure of the CDPP-grid
+solution. If 𝑝 > 1.6 min, a TSP solution parking at every customer location is not an optimal solution to the CDPP-grid when 𝑞 = 3,
+the base case of our experimental design. In an empirical study, Dalla Chiara and Goodchild (2020) find that delivery drivers spend
+on average 5.8 min searching for each parking spot in Seattle. This parking time suggests that productivity gains can be achieved in
+urban environments by considering parking time in routing decisions. In lower density areas, like rural environments, Fig. 2 shows
+that the parking time must be higher to change the structure of the optimal solution from a TSP solution parking at every customer.
+Specifically, when 𝑞 ≤ 3, Fig. 2 shows that the TSP parking at every customer is optimal in rural environments if 𝑝 < 6 min. In
+Section 5, our experimental results indicate that a TSP solution parking at every customer best approximates optimal solutions to
+the CDPP in rural environments.
+5. Experimental results
+In this section, we explore the impact of including parking time in optimal routing decisions on the structure of the solution
+and the completion time of the delivery tour. Section 5.1 discusses the experimental design that enables us to explore the impact of
+parking time in all customer geographies. Section 5.2 introduces benchmarks to the CDPP that reflect current industry practice asTransportation Research Part E 181 (2024) 103391
+9
+S. Reed et al.
+well as recent models in the literature. Section 5.3 summarizes the differences between the CDPP and benchmark solutions in the
+base case (𝑛 = 50 customers, location-dependent parking times, 𝑞 = 3 packages, and 𝑓 = 2.1 min). Then, Sections 5.4 and 5.5 discuss
+the impact of parking time and capacity of the delivery person, respectively, on the structure of the CDPP solution. We utilize the
+two-echelon location-routing heuristic to make insights for larger test instances.
+5.1. Experimental design
+In this section, we introduce the test instances and experimental design. The mixed integer programming model for the CDPP
+is implemented in Python 3.7.0 using the Gurobi 9.0.0 solver with a 32 thread count on the University of Iowa’s Argon high
+performance computing cluster (Johnson, 2021).
+To explore the impact of parking time in all customer geographies, we use the test instances for the case study of Illinois
+that represent urban to rural settings as described in Reed et al. (2022a). In particular, we use Cook County, Adams County, and
+Cumberland County to represent urban, suburban, and rural environments, respectively, based on the classification of the United
+States Department of Agriculture (USDA, 2013). We evaluate ten instances of 𝑛 = 50 customers for each county. The test instances
+include real-world data for the driving times and walking times between customers (Reed et al., 2021). A study of last-mile delivery
+practices in London finds that a delivery route visits on average 72 customers (Allen et al., 2018). To evaluate the impact of parking
+time on instances of size observed in London and larger, we generate five instances in each of Cook, Adams, and Cumberland counties
+for 𝑛 = 100 following the procedure of Reed et al. (2022a). All test instances are posted at: https://doi.org/10.25820/data.006124.
+We restrict the parking locations of the vehicle to all customer locations (i.e., 𝛱 = 𝐶 ∪ {0}.) We assume the vehicle finds parking
+and parks at the chosen location after a fixed parking time. We vary the parking time in each type of customer geography (i.e., urban,
+suburban, and rural) as parking poses a greater challenge in urban environments than rural environments. Within each geography,
+we consider a parking time 𝑝 independent of the parking location (i.e., for all 𝑘 ∈ 𝛱 ⧵ {0}, 𝑝𝑘 = 𝑝 for some 𝑝 ≥ 0.) Doing so allows
+us to isolate the impact of the parking time on optimal routing decisions in different geographies. Like Reed et al. (2022a), we use
+𝑝 = 9 min in Cook County, 𝑝 = 5 min in Adams County, and 𝑝 = 1 min in Cumberland County as our base case. These values reflect
+location-dependent parking times where a higher parking time is realized in urban environments compared to rural environments.
+For each county, we also experiment with smaller values of 𝑝 to understand how including the parking time changes the structure
+of the solution in the CDPP. For Cook County, we experiment with 𝑝 = 0, 3, and 6 min. For Adams County, we include experiments
+with 𝑝 = 0 and 3 min. For Cumberland County, we also consider 𝑝 = 0.
+We choose the parameter values for the capacity of the delivery person 𝑞 and the time to load a package 𝑓 based on observations
+in the literature. A study of last-mile delivery in London finds that a delivery person delivers 3 packages on average per stop (Allen
+et al., 2018). The dataset used in the 2021 Amazon Last Mile Routing Research Challenge shows drivers in United States metropolitan
+areas deliver on average 238.5 packages at 148.0 stops which translates to an average of 1.6 packages per stop (Merchan et al.,
+2022). Therefore, we consider a carrying capacity based on the number of packages 𝑞 and use 𝑞 = 3 packages in our base case. We
+experiment with capacities of 1 to 6 packages. The average delivery time for a package is estimated to be between 2.5–4.1 min (Allen
+et al., 2018; Simoni et al., 2020b; Zhang et al., 2018). This time often includes multiple delivery activities. Allen et al. (2018) observe
+4.1 min of service time per customer where this estimate includes the time spent unloading the package, walking to the customer,
+and gaining proof-of-delivery. Nguyên et al. (2019) estimate a one minute walking time allowance and one minute consignee service
+time. Combining the estimates of Allen et al. (2018) and Nguyên et al. (2019), we assume the time to unload a package is 2.1 min
+in our base case.
+5.2. Benchmarks
+We introduce two benchmarks to the CDPP and use these benchmarks to highlight why including parking time matters in routing
+optimization for last-mile delivery.
+5.2.1. Modified TSP
+The routing algorithm for UPS provides the driver a solution based on a TSP algorithm (Rosenbush and Stevens, 2015). The
+driver has autonomy to make the final routing decisions including where the delivery person will walk and where the delivery
+person will drive. To model this real-life practice, we use a TSP solution to fix the order of service. To reflect choices made by
+the driver and allow service to customers on foot, we transform this TSP solution to take into account the trade-offs between the
+parking time, driving time, and walking time.
+This benchmark, hereafter called the Modified TSP, is a route-first cluster-second method to optimize the trade-offs of walking,
+driving, and parking given a fixed customer order. A TSP solution with respect to driving times fixes the order of customer service. We
+generate potential service sets based on this order and restrict the size of the service set based on the capacity of the delivery person
+𝑞. In addition, we allow the delivery person to serve multiple customer service sets from the same parking spot while maintaining
+the order of customer service. We implement this benchmark by restricting the sets of driving variables 𝑥𝑖𝑘 and service variables 𝑦𝑖𝑗
+in the CDPP. We update the walking service time 𝑤𝑖𝑗 to maintain the order of service. We use the objective function in Eq. (1) to
+minimize the completion time of the delivery tour and capture the impact of parking time on the driver’s decision making.Transportation Research Part E 181 (2024) 103391
+10
+S. Reed et al.
+Fig. 3. Average percent reduction in completion time of delivery tours by using CDPP relative to Relaxed M-S with 𝛼 = 0.5, Relaxed M-S with 𝛼 = 0.6, Relaxed
+M-S with 𝛼 = 0.8, and Modified TSP in the base case.
+5.2.2. Relaxed M-S
+One of the limitations in the two-echelon models presented by Nguyên et al. (2019) and Martinez-Sykora et al. (2020) is that both
+require a parking location in every customer set. Unlike Nguyên et al. (2019), Martinez-Sykora et al. (2020) include the clustering of
+customers as a decision in the optimization problem. To benchmark the CDPP with the literature, we consider a relaxed version of
+the model by Martinez-Sykora et al. (2020), hereafter called Relaxed M-S, that allows the delivery person to serve multiple customer
+service sets from the same parking spot. For comparison purposes, we define the carrying capacity of the delivery person in the
+Relaxed M-S benchmark to be based on the number of packages 𝑞.
+The key difference between the Relaxed M-S and the CDPP is the objective function. The objective function for the CDPP,
+in Eq. (1), includes the parking time when evaluating the completion time of the delivery tour. Martinez-Sykora et al. (2020)
+consider a weighted sum of the driving and walking times for the delivery person. Using the notation of Section 3.1, Eq. (23)
+presents the objective function in Martinez-Sykora et al. (2020),
+𝛼
+∑
+𝑖∈𝛱
+∑
+𝑘∈𝛱⧵{𝑖}
+𝑥𝑖𝑘𝐷(𝑖, 𝑘) + (1 − 𝛼)
+∑
+𝑖∈𝛱⧵{0}
+∑
+𝜎𝑗 ∈𝑆
+𝑦𝑖𝑗 𝑤𝑖𝑗 (23)
+where 𝛼 ∈ [0, 1]. We implement the Relaxed M-S benchmark by using Eq. (23) as the objective value in the CDPP. Since we assume
+a loading time linearly dependent on the number of packages, the total loading time is a constant and added to the objective value
+in Eq. (23). Similar to Martinez-Sykora et al. (2020), we consider 𝛼 ∈ {0 .6, 0.8} in the Relaxed M-S benchmark. In addition, we
+consider 𝛼 = 0 .5 which gives an equal weighting to driving and walking time. Note that setting 𝛼 = 0 .5 provides an equivalent
+solution to the CDPP with 𝑝 = 0 min. Let 𝑣 be the optimal value of the Relaxed M-S benchmark (including loading time) and 𝑠 be
+the number of times the vehicle parks in the respective solution. Then, the completion time with a solution of this benchmark is
+𝑣 + 𝑠𝑝 minutes. Comparing the completion times for the CDPP and the Relaxed M-S benchmark highlights the impact of including
+parking time in the objective function.
+5.3. Comparison of CDPP to benchmarks
+In this section, we compare the completion time of the delivery tour in the CDPP with the values of the solutions for the
+benchmarks in the base case ( 𝑛 = 50 customers, location-dependent parking times, 𝑞 = 3 packages, and 𝑓 = 2.1 min).
+Fig. 3 shows the average percent reduction in the completion time of delivery tours by using the CDPP relative to each benchmark
+for Cook, Adams, and Cumberland counties. Including parking time reduces the completion time of delivery tours in all counties.
+The CDPP outperforms models in the literature and industry practice. The Relaxed M-S benchmark generalizes the current models
+in the literature. Fig. 3 shows the CDPP reduces the completion time up to 53% on average relative to the Relaxed M-S benchmark
+with 𝛼 = 0.5. We see similar results when 𝛼 = 0.6. Increasing 𝛼 to 0.8, the CDPP reduces the completion time up to 48% on average.
+In Cumberland County, the CDPP realizes greater reductions at higher levels of 𝛼. Considering the Modified TSP to model real-life
+practice, the CDPP reduces the completion time up to 11% on average. Insight 1 summarizes this result.
+Insight 1. Parking matters in last-mile delivery optimization. The CDPP outperforms industry practice and models in the literature,
+highlighting the value of determining the order of service and including parking time in optimal routing decisions.
+The impact of parking differs across customer geographies. The CDPP provides the greatest savings in Cook County, an urban
+environment with the highest customer density and parking time. Including the parking time in routing decisions via the CDPPTransportation Research Part E 181 (2024) 103391
+11
+S. Reed et al.
+Fig. 4. Solutions to a portion of an instance of Cook County for the (a) CDPP, (b) Relaxed M-S benchmark with 𝛼 = 0 .5, and (c) Modified TSP benchmark in
+the base case.
+reduces the completion time of these delivery tours by an average of 53% relative to considering the driving and walking trade-off
+via the Relaxed M-S benchmark with 𝛼 ∈ {0.5, 0.6}. Further, the delivery person saves an average of 48% and 11% in delivery time
+relative to the Relaxed M-S with 𝛼 = 0.8 and Modified TSP, respectively. In rural areas where the customer density and parking time
+is generally low, the CDPP provides a similar completion time in the delivery tour as the Modified TSP. Therefore, using the TSP
+solution may be sufficient in making routing decisions for rural environments. Increasing the value of 𝛼 in Eq. (23) makes walking
+advantageous in the solution to the Relaxed M-S benchmark. However, in rural environments, when the distance between customers
+is greater, a solution that incentivizes walking adversely affects the realized completion time of the delivery tour. Therefore, we see
+a higher level of savings for the CDPP when 𝛼 = 0.8 than 𝛼 = 0.5 or 0.6. We further explore this result later in this section. Insight 2
+summarizes these results.
+Insight 2. Including parking time in routing optimization for last-mile delivery provides the greatest advantage in urban environments
+where parking is a challenge. In rural areas, the TSP may be sufficient in making routing decisions.
+Now, we explore how the structure of an optimal solution to the CDPP differs from the solutions of the benchmark problems.
+Fig. 4 shows the solutions to the (a) CDPP, (b) Relaxed M-S with 𝛼 = 0.5, and (c) Modified TSP for a portion of an instance in Cook
+County. We focus on a portion of the solution to highlight the local differences in the CDPP and benchmark solutions. The solid
+black lines indicate the driving path of the vehicle. The dotted lines indicate the walking paths of the delivery person. Each color
+represents a different service set. The flag icons indicate the parking spots. The numerical label at the customer location indicates
+the order service within the tour. For example, a numerical label of 𝑖 indicates that this customer is 𝑖th on the tour. Fig. 4 a shows
+an optimal solution for the CDPP in this instance of Cook County. The delivery person serves three customer sets from a single
+parking spot. Fig. 4b shows the solution for the Relaxed M-S with 𝛼 = 0.5 (i.e., CDPP with 𝑝 = 0). For this instance, the solution to
+this benchmark is a TSP solution, parking at every customer, and driving between customer locations. However, the parking time
+in Cook County is 9 min. If the delivery person follows the solution in Fig. 4 b, the delivery person spends about an hour looking
+for parking to serve these eight customers. Fig. 4 a shows that even though walking is slower than driving, it is more advantageous
+to park once and serve all customers on foot. Insight 3 summarizes this observation.
+Insight 3. When parking time is ignored, routing decisions that focus on finding the fastest driving path to service all customers may result
+in unnecessary time spent searching for parking.
+Recall that the Modified TSP uses a solution to the TSP to fix the order of customer service. Fig. 4 c shows the solution of the
+Modified TSP benchmark. The Modified TSP optimizes the trade-offs between walking, driving, and parking for a fixed service order.
+Similar to the CDPP solution in Fig. 4 a, Fig. 4c shows that the delivery person parks once to avoid high parking times and walks
+to service customers on foot. However, fixing the order of service to the TSP results in additional walking time for the deliveryTransportation Research Part E 181 (2024) 103391
+12
+S. Reed et al.
+Fig. 5. Average time (minutes) spent in the Relaxed M-S with 𝛼 ∈ {0 .6, 0.8} and CDPP delivery tours parking, driving, walking, and loading packages for (a)
+Cook County and (b) Cumberland County in the base case.
+person relative to the CDPP in Fig. 4a. The CDPP takes into account the parking time when determining where to park as well as
+the walking path for the delivery person reducing the completion time of the delivery tour relative to the Modified TSP. Insight 4
+summarizes this observation.
+Insight 4. Routing in last-mile delivery must include optimizing customer service order to make more efficient choices of parking spot
+locations and walking paths for the delivery person.
+Finally, we analyze the solution structure of the Relaxed M-S benchmarks to understand the impact of using parking time in
+the objective function of the CDPP. Fig. 5 shows the average time (in minutes) spent in the Relaxed M-S and CDPP delivery tours
+parking, driving, walking, and loading packages for Cook and Cumberland counties. Similar to Martinez-Sykora et al. (2020), we
+consider 𝛼 ∈ {0 .6, 0.8} for this analysis. When 𝛼 = 0 .6, the solution structure in both counties relies on the delivery person driving
+with limited to no walking. A solution that focuses on driving forces the delivery person to search for many parking locations. In
+Cook County, Fig. 5a shows the delivery person spends on average 77% of the delivery tour in the process of parking. Increasing 𝛼
+to 0.8 makes walking advantageous and reduces the completion time of the delivery tour by 11% on average. However, the process
+of parking remains a significant portion of the delivery tour. Including the parking time in the objective function further reduces the
+completion time of the delivery tour by 48% on average. In Cook County, where the customer density is high, the delivery person
+controls the time spent parking by parking in fewer locations and walking to service customers. When customers are further apart,
+like Cumberland County, Fig. 5b shows that increasing 𝛼 to 0.8 increases the completion time of the delivery tour 3% on average.
+Making walking advantageous in rural environments forces the delivery person to walk between customers that are further apart.
+The similarity in the solution structures between the Relaxed M-S with 𝛼 = 0 .6 and the CDPP support the conclusions of Insight 2
+that a solution that relies on driving is sufficient in rural environments. Insight 5 summarizes these results.
+Insight 5. Including parking time in the objective for last-mile delivery routing is critical to achieve optimal trade-offs between driving,
+walking, and parking.
+5.4. Impact of parking time
+In this section, we focus on how the parking time 𝑝 changes the structure to the CDPP solution for each type of customer
+geography based on county. Fig. 6 shows the average time (in minutes) spent in optimal CDPP delivery tours parking, driving,
+walking, and loading packages for Cook County in the base case with various parking times. In urban settings, parking time is
+expected to be high. We test 𝑝 = 0, 3, 6, and 9 min. Fig. 6 shows that the total time spent in the process of parking remains relatively
+stable – between 40–47 min on average – when 𝑝 > 0, indicating that the delivery person parks fewer times as the parking time
+increases. Relatedly, we observe the walking time significantly increases (57 to 111 min on average) as the delivery person must
+walk further to service more customers. Insight 6 summarizes this observation.
+Insight 6. In urban areas, as parking time increases, the total time spent in the process of parking remains stable. At higher parking times,
+the delivery person parks fewer times at the expense of significantly increasing walking time.Transportation Research Part E 181 (2024) 103391
+13
+S. Reed et al.
+Fig. 6. Average time (minutes) spent in optimal CDPP delivery tours parking, driving, walking, and loading packages for Cook County in the base case with
+various parking times.
+Outside of urban environments, we observe that differences in customer geography reduce the impact of parking time on the
+structure of the CDPP solution. Fig. 7 shows the average time (in minutes) spent in optimal CDPP delivery tours parking, driving,
+walking, and loading packages for Adams and Cumberland counties. Recall that Adams and Cumberland counties are classified as
+suburban and rural areas, respectively. Therefore, we expect customers to be further apart in these counties than in an urban area,
+like Cook County. When 𝑝 increases from 0 to 3 min, the completion time of the delivery tour increases by approximately the same
+amount on average in Cook and Adams counties (95 min in Cook County and 98 min in Adams County). However, the impact on
+the structure of the solution differs. When 𝑝 increases from 0 to 3 min in Cook County, Fig. 6 shows the average time spent in the
+process of parking increases 47 min accounting for 49% of the increase in the completion time of the delivery tour. The remaining
+51% of the increase reflects changes in the solution structure, i.e. less driving time and more walking time for the delivery person.
+In Adams County, when 𝑝 increases from 0 to 3 min, Fig. 7a shows that the average time spent in the process of parking increases
+65 min. In this case, the total parking time accounts for 66% of the increase in the completion time of the delivery tour. Similar to
+Cook County, when 𝑝 increases from 0 to 3 min, Fig. 7a shows driving time decreases and walking time increases, but these changes
+in the solution structure only account for 33% of the increase in the completion time of the delivery tour. Therefore, the increase in
+the parking time has less impact on the solution structure in Adams County than Cook County. The differences in how the solution
+changes between Cook and Adams counties reflect that the CDPP solution cannot trade off more walking at a higher parking time
+in a county, such as Adams, where the customers are relatively further apart. Insight 7 summarizes these results.
+Insight 7. Differences in customer geography influence the significance of including the parking time in routing decisions. Increasing the
+parking time outside of urban environments has less impact on the solution structure than in urban environments.
+In rural environments, like Cumberland County, we test 𝑝 = 0 and 1 min as we expect parking times to be low. Since customers
+are likely further apart than urban and suburban environments, we expect the delivery person to spend more time driving between
+customers than walking. Fig. 7b shows that there exists customer locations close enough together such that it is advantageous to
+walk to them even when 𝑝 = 1 min. However, the driving time remains the same on average indicating that the increase in the
+parking time does not have a significant effect on routing decisions. These observations support the conclusion of Insight 2 that the
+TSP driving to all customers may be sufficient in making routing decisions for rural environments.
+Insight 7 concludes that increasing parking time has the greatest impact in urban environments. Now, we show the two-echelon
+location-routing heuristic captures similar changes to the structure of the solutions as parking time changes for larger 𝑛 in urban
+environments. In optimal solutions to the CDPP for 𝑛 = 50 in Cook County, Fig. 6 shows that as parking time increases, the delivery
+person parks fewer times at the expense of significantly increasing walking time. Fig. 8 shows the results for heuristic solutions on
+𝑛 = 100 instances in Cook County using the two-echelon location-routing heuristic. The figure shows the average time of the delivery
+tour (in minutes) spent in the heuristic solutions with various parking times. Again, we observe greater change in the walking time
+for the delivery person relative to changes in parking time. Thus, it remains advantageous to park fewer times and walk further
+to deliver to customers. This analysis supports the use of the two-echelon location-routing heuristic to realize the advantages of
+including the parking time in routing last-mile delivery for larger instances.
+5.5. Impact of the capacity of delivery person
+In this section, we discuss the impact of the capacity of the delivery person𝑞 on reducing the completion time of the delivery tour
+in different customer geographies. Fig. 9 shows the average objective value of the CDPP for Cook, Adams, and Cumberland countiesTransportation Research Part E 181 (2024) 103391
+14
+S. Reed et al.
+Fig. 7. Average time (minutes) spent in optimal CDPP delivery tours parking, driving, walking, and loading packages for (a) Adams County and (b) Cumberland
+County in the base case with various parking times.
+Fig. 8. Average time (minutes) spent parking, driving, walking, and loading packages in solutions to the two-echelon location-routing heuristic for Cook county
+when 𝑛 = 100 in the base case with various parking times.
+in the base case ( 𝑛 = 50 customers) with varying capacities. A textured bar indicates the use of the two-echelon location-routing
+heuristic for the analysis. In urban areas, like Cook County, Fig. 9 shows increasing the capacity from 𝑞 = 1 to 4 packages reduces
+the completion time of the delivery tour by 20% on average. Increases in the completion time when 𝑞 = 5 and 6 packages are due
+to the use of the heuristic solution in the analysis. We observe a smaller impact in Adams County with an average reduction of 6%
+when increasing from 𝑞 = 1 to 4 packages. In rural areas, like Cumberland County, we observe little difference between the solution
+for 𝑞 = 1 and 4 packages. This observation supports Insight 2 showing that serving customers individually may be sufficient for
+routing decisions in rural areas. For all counties, we observe marginally decreasing reductions in the delivery tour when increasing
+capacity. Fig. 10 shows the average objective value of the CDPP for each county when 𝑛 = 100 with varying capacities. Note that
+the CDPP MIP for 1 out of the 5 instances in Cumberland County for 𝑛 = 100 and 𝑞 = 1 and 2 solved to an optimality gap of
+1.2%. Fig. 10 shows similar results with respect to changes in capacity of the delivery person when 𝑛 = 100 customers which again
+supports the use of the two-echelon location routing heuristic to capture changes in the solution with respect to capacity. Insight 8
+summarizes these results.
+Insight 8. Increasing the capacity of the delivery person is more advantageous outside of rural areas. We observe diminishing marginal
+returns with each addition to driver capacity.Transportation Research Part E 181 (2024) 103391
+15
+S. Reed et al.
+Fig. 9. Average optimal delivery tour completion time (minutes) of the CDPP (or heuristic) for Cook, Adams, and Cumberland Counties in the base case ( 𝑛 = 50
+customers) with varying capacities.
+Fig. 10. Average optimal delivery tour completion time (minutes) of the CDPP (or heuristic) for Cook, Adams, and Cumberland Counties when 𝑛 = 100 customers
+with varying capacities.
+6. Conclusions and future work
+Yes, parking matters. Including parking time in the objective for routing optimization for last-mile delivery may significantly
+reduce the completion time of the delivery tour. Routing to minimize distance traveled may not minimize route time as the driver
+could spend unnecessary time parking the vehicle. Using the CDPP for routing decisions provides the greatest advantage in urban
+environments where parking is a challenge and often time consuming. When parking is a challenge, the CDPP solution recommends
+that the delivery person park in fewer locations and serve multiple customer service sets from the same parking spot. This decision
+balances the trade-offs of walking to service more customers from the current parking location and driving to find a new parking
+location. However, in rural environments where parking is more readily available, a solution that parks at all customers serving
+each customer individually may be sufficient.
+These insights are reflected in our analytical results that determine when the parking time becomes large enough that the
+TSP solution parking at every customer location is not an optimal solution to the CDPP-grid. These results show that in urban
+environments, where customers are close together, small parking times impact the structure of the optimal solution in the CDPP-
+grid. A TSP solution that parks at every customer best approximates optimal solutions to the CDPP-grid in rural environments where
+customers are further apart.
+This paper introduces technology for solving instances with 𝑛 = 50 customers and 𝑞 = 3 packages for the CDPP efficiently.
+However, further work needs to be done to control the growth in the number of variables in the model, particularly the service
+variables 𝑦𝑖𝑗 which grows both in the number of customers as well as the number of potential service sets. An alternative formulationTransportation Research Part E 181 (2024) 103391
+16
+S. Reed et al.
+of the CDPP using traditional subtour elimination constraints or column generation may improve computational performance. In
+addition, the model improvements in this paper may inform ways to improve the MIP formulations in Martinez-Sykora et al.
+(2020) and Le Colleter et al. (2023) that use a polynomial set of variables and constraints. A generalization of the branch-and-
+cut algorithm from Martinez-Sykora et al. (2020) that allows multiple customer service sets from the same parking spot may
+also improve computational performance. For instances where the CDPP formulation becomes intractably large, we propose a
+two-echelon location-routing heuristic and show that this heuristic finds high quality solutions quickly. These heuristic solutions
+outperform other traditional last-mile delivery models providing an immediate improvement to industry practice and models in the
+literature.
+This work provides immediate ways to improve routing a single vehicle for last-mile delivery. Future work includes considering
+the impact of parking under additional delivery constraints, such as customer time windows and additional service times, as well
+as the consideration of a fleet of vehicles. Further, the impact of parking may differ based on the density of customer locations in
+the same type of customer geography. In the experimental design, we assume that the parking locations are restricted to customer
+locations. However, it may be the case, as studied in Le Colleter et al. (2023), that the vehicle cannot park at every customer and/or
+there exists parking locations, such as loading zones, outside of customer locations that should be considered. Future work includes
+the analysis of further restricting or increasing parking locations in the CDPP.
+We model last-mile delivery in a deterministic framework to build insights on the impact that parking time has on routing
+decisions. However, we know parking is stochastic and can vary by location and time of day. In Seattle, Dalla Chiara and Goodchild
+(2020) conclude that the cruise time for parking decreases when more curb-space is allocated to commercial loading zones and paid
+parking and increases when more curb-space is allocated to bus zones. A survey of 16 drivers in New York City finds that the search
+time for parking ranges from 3 min in Brooklyn to 60 min in Midtown East (Holguín-Veras et al., 2016). Future work includes the
+analysis of spatial changes in parking time. In addition, future work includes generalizing the CDPP to consider temporal changes
+in parking time as well as the impact of parking in a stochastic framework. In particular, we may utilize insights from the CDPP to
+model parking in a dynamic setting where the driver may choose an alternate parking spot based on observed parking availability.
+An understanding of the availability of parking locations and its impact on delivery practices also benefits urban planning efforts.
+Currently, many urban areas are experimenting with loading zone reservations and pricing schemes for delivery vehicles (Shaver,
+2019; Balik et al., 2016). For example, a pilot program in Aspen, Colorado, allows commercial drivers to reserve and pay for the use
+of ‘‘Smart Zones’’ with a mobile app (Sackariason, 2020). Insights into how parking impacts routing in last-mile delivery may allow
+for better placement of loading zones and better pricing schemes to incentivize drivers and yield better curbside management.
+CRediT authorship contribution statement
+Sara Reed: Conceptualization, Methodology, Software, Writing – original draft, Visualization. Ann Melissa Campbell: Con-
+ceptualization, Resources, Writing – review & editing. Barrett W. Thomas: Conceptualization, Resources, Writing – review &
+editing.
+Declaration of competing interest
+The authors declare that they have no known competing financial interests or personal relationships that could have appeared
+to influence the work reported in this paper.
+Appendix A. Supplementary data
+Supplementary material related to this article can be found online at https://doi.org/10.1016/j.tre.2023.103391.
+References
+Allen, Julian, Piecyk, Maja, Piotrowska, Marzena, McLeod, Fraser, Cherrett, Thomas, Ghali, Karen, Nguyên, Thu Ba T., Bektaş, Tolga, Bates, Oliver, Friday, Adrian,
+et al., 2018. Understanding the impact of e-commerce on last-mile light goods vehicle activity in urban areas: The case of London. Transp. Res. D 61, 325–338.
+Balik, Justin, Dimino, Richard, Figueroa Ortiz, Irene, DeNisco, Ralph, Liu, Qingnan, Schrieber, Jason, 2016. Future of Parking in Boston. Technical report, URL
+https://www.abettercity.org/docs-new/Future_of_Parking_in_Boston.pdf.
+Belenguer, José Manuel, Benavent, Enrique, Martínez, Antonio, Prins, Christian, Prodhon, Caroline, Villegas, Juan G., 2016. A branch-and-cut algorithm for the
+single truck and trailer routing problem with satellite depots. Transp. Sci. 50 (2), 735–749.
+Boccia, Maurizio, Crainic, Teodor Gabriel, Sforza, Antonio, Sterle, Claudio, 2011. Location-routing models for designing a two-echelon freight distribution system.
+In: Rapport technique. vol. 91, CIRRELT, Université de Montréal.
+Bodin, Lawrence, Levy, Laurence, 2000. Scheduling of local delivery carrier routes for the United States Postal Service. In: Arc Routing. Springer, pp. 419–442.
+Boysen, Nils, Fedtke, Stefan, Schwerdfeger, Stefan, 2021. Last-mile delivery concepts: a survey from an operational research perspective. OR Spectrum 1–58.
+Cabrera, Nicolás, Cordeau, Jean-François, Mendoza, Jorge E., 2022. The doubly open park-and-loop routing problem. Comput. Oper. Res. 143, 105761.
+Contardo, Claudio, Hemmelmayr, Vera, Crainic, Teodor Gabriel, 2012. Lower and upper bounds for the two-echelon capacitated location-routing problem. Comput.
+Oper. Res. 39 (12), 3185–3199.
+Dalla Chiara, Giacomo, Goodchild, Anne, 2020. Do commercial vehicles cruise for parking? Empirical evidence from Seattle. Transp. Policy 97, 26–36.
+Dalla Chiara, Giacomo, Krutein, Klaas Fiete, Ranjbari, Andisheh, Goodchild, Anne, 2021. Understanding urban commercial vehicle driver behaviors and decision
+making. Transp. Res. Rec. 2675 (9), 608–619.
+Danigelis, Alyssa, 2018. New York City invests $100m in freight infrastructure overhaul. Environment Energy Lead. URL https://www.environmentalleader.com/
+2018/07/new-york-city-infrastructure-overhaul/.Transportation Research Part E 181 (2024) 103391
+17
+S. Reed et al.
+Figliozzi, Miguel, Tipagornwong, Chawalit, 2017. Impact of last mile parking availability on commercial vehicle costs and operations. In: Supply Chain Forum:
+An International Journal. vol. 18, (2), Taylor & Francis, pp. 60–68.
+Gavish, Bezalel, Graves, Stephen C., 1978. The travelling salesman problem and related problems. Massachusetts Institute of Technology, Operations Research
+Center.
+Haag, Matthew, Hu, Winnie, 2019. 1.5 Million packages a day: The internet brings chaos to N.Y. streets. N.Y. Times URL https://www.nytimes.com/2019/10/
+27/nyregion/nyc-amazon-delivery.html.
+Holguín-Veras, José, Amaya, Johanna, Encarnacion, Trilce, Kyle, Sofia, Wojtowicz, Jeffrey, 2016. Impacts of Freight Parking Policies in Urban Areas: The Case
+of New York City. Technical report, URL https://rosap.ntl.bts.gov/view/dot/32386.
+Johnson, Glenn P., 2021. Argon cluster. Technical report, Univeristy of Iowa, URL https://wiki.uiowa.edu/display/hpcdocs/Argon+Cluster.
+Le Colleter, Théo, Dumez, Dorian, Lehuédé, Fabien, Péton, Olivier, 2023. Small and large neighborhood search for the park-and-loop routing problem with
+parking selection. European J. Oper. Res. 308 (3), 1233–1248.
+Lopez, Clélia, Zhao, Chuan-Lin, Magniol, Stéphane, Chiabaut, Nicolas, Leclercq, Ludovic, 2019. Microscopic simulation of cruising for parking of trucks as a
+measure to manage Freight Loading Zone. Sustainability 11 (5), 1276.
+Martinez-Sykora, Antonio, McLeod, Fraser, Lamas-Fernandez, Carlos, Bektaş, Tolga, Cherrett, Tom, Allen, Julian, 2020. Optimised solutions to the last-mile
+delivery problem in London using a combination of walking and driving. Ann. Oper. Res. 295 (2), 645–693.
+Merchan, Daniel, Arora, Jatin, Pachon, Julian, Konduri, Karthik, Winkenbach, Matthias, Parks, Steven, Noszek, Joseph, 2022. 2021 Amazon last mile routing
+research challenge: Data set. Transp. Sci.
+Nguyên, Thu Ba T., Bektaş, Tolga, Cherrett, Tom J., McLeod, Fraser N., Allen, Julian, Bates, Oliver, Piotrowska, Marzena, Piecyk, Maja, Friday, Adrian, Wise, Sarah,
+2019. Optimising parcel deliveries in London using dual-mode routing. J. Oper. Res. Soc. 70 (6), 998–1010.
+Nguyen, Viet-Phuong, Prins, Christian, Prodhon, Caroline, 2012a. A multi-start iterated local search with tabu list and path relinking for the two-echelon
+location-routing problem. Eng. Appl. Artif. Intell. 25 (1), 56–71.
+Nguyen, Viet-Phuong, Prins, Christian, Prodhon, Caroline, 2012b. Solving the two-echelon location routing problem by a GRASP reinforced by a learning process
+and path relinking. European J. Oper. Res. 216 (1), 113–126.
+Nourinejad, Mehdi, Wenneman, Adam, Habib, Khandker Nurul, Roorda, Matthew J., 2014. Truck parking in urban areas: Application of choice modelling within
+traffic microsimulation. Transp. Res. A 64, 54–64.
+Poikonen, Stefan, Golden, Bruce, 2020. Multi-visit drone routing problem. Comput. Oper. Res. 113, 104802.
+Reed, Sara, Campbell, Ann Melissa, Thomas, Barrett W., 2021. Instances for impact of autonomous vehicle assisted last-mile delivery in urban to rural settings.
+URL http://dx.doi.org/10.25820/data.006124.
+Reed, Sara, Campbell, Ann Melissa, Thomas, Barrett W., 2022a. Impact of autonomous vehicle assisted last-mile delivery in urban to rural settings. Transp. Sci.
+56 (6), 1530–1548.
+Reed, Sara, Campbell, Ann Melissa, Thomas, Barrett W., 2022b. The value of autonomous vehicles for last-mile deliveries in urban environments. Manage. Sci.
+68 (1), 280–299.
+Rosenbush, Steven, Stevens, Laura, 2015. At UPS, the algorithm is the driver. Wall Street J. URL https://www.wsj.com/articles/at-ups-the-algorithm-is-the-
+driver-1424136536.
+Sackariason, Carolyn, 2020. Downtown Aspen loading zones to be part of national pilot program. The Aspen Times URL https://www.aspentimes.com/news/
+downtown-aspen-loading-zones-to-be-part-of-national-pilot-program/.
+Shaver, Katherine, 2019. Study: Allowing delivery drivers to reserve curb space reduces double-parking. The Washington Post URL https://www.washingtonpost.
+com/local/trafficandcommuting/study-allowing-delivery-drivers-to-reserve-curb-space-reduces-double-parking/2019/11/17/8e569866-062f-11ea-ac12-
+3325d49eacaa_story.html.
+Simoni, Michele D., Kutanoglu, Erhan, Claudel, Christian G., 2020a. Optimization and analysis of a robot-assisted last mile delivery system. Transp. Res. E 142,
+102049.
+Simoni, Michele D., Marcucci, Edoardo, Gatta, Valerio, Claudel, Christian G., 2020b. Potential last-mile impacts of crowdshipping services: A simulation-based
+evaluation. Transportation 47, 1933–1954.
+Sluijk, Natasja, Florio, Alexandre M., Kinable, Joris, Dellaert, Nico, Van Woensel, Tom, 2023. Two-echelon vehicle routing problems: A literature review. European
+J. Oper. Res. 304 (3), 865–886.
+USDA, 2013. Rural-urban continuum codes. Technical report, United States Department of Agriculture (USDA), URL https://www.ers.usda.gov/data-products/rural-
+urban-continuum-codes/.
+Zhang, Lei, Matteis, Tilman, Thaller, Carina, Liedtke, Gernot, 2018. Simulation-based assessment of cargo bicycle and pick-up point in urban parcel delivery.
+Proc. Comput. Sci. 130, 18–25.

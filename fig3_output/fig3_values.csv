@@ -1,0 +1,13 @@
+county,benchmark,avg_pct_reduction
+Cook,Relaxed M-S (alpha=0.5),50.169673007465335
+Cook,Relaxed M-S (alpha=0.6),50.00873718509938
+Cook,Relaxed M-S (alpha=0.8),28.766723686179212
+Cook,Modified TSP,22.36959768019397
+Adams,Relaxed M-S (alpha=0.5),25.348351741004436
+Adams,Relaxed M-S (alpha=0.6),24.50208505158296
+Adams,Relaxed M-S (alpha=0.8),21.942707730554723
+Adams,Modified TSP,5.775955722494765
+Cumberland,Relaxed M-S (alpha=0.5),0.73928701815727
+Cumberland,Relaxed M-S (alpha=0.6),0.73928701815727
+Cumberland,Relaxed M-S (alpha=0.8),0.9304093042155237
+Cumberland,Modified TSP,-0.35756341806658193

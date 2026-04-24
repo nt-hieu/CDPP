@@ -1,0 +1,16 @@
+county,benchmark,completion_time
+Adams,CDPP,293.13525
+Adams,Modified TSP,310.08990000000006
+Adams,Relaxed M-S (alpha=0.5),391.9749166666667
+Adams,Relaxed M-S (alpha=0.6),387.9973
+Adams,Relaxed M-S (alpha=0.8),377.52298333333334
+Cook,CDPP,290.0246333333333
+Cook,Modified TSP,373.67690000000005
+Cook,Relaxed M-S (alpha=0.5),581.8711000000001
+Cook,Relaxed M-S (alpha=0.6),580.0733666666667
+Cook,Relaxed M-S (alpha=0.8),421.6377666666666
+Cumberland,CDPP,199.4805
+Cumberland,Modified TSP,198.8013999999999
+Cumberland,Relaxed M-S (alpha=0.5),201.14145
+Cumberland,Relaxed M-S (alpha=0.6),201.14145
+Cumberland,Relaxed M-S (alpha=0.8),201.59306666666666
